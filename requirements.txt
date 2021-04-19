@@ -1,5 +1,6 @@
 numpy
 scipy
-networkx==1.11
+pandas
+networkx==2.5.1
 scikit-learn
 hyperopt==0.1.1

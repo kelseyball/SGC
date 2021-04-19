@@ -5,6 +5,7 @@ import sys
 import pickle as pkl
 import networkx as nx
 from normalization import fetch_normalization, row_normalize
+from edge_utils import to_edge_adj
 from time import perf_counter
 
 def parse_index_file(filename):
@@ -59,8 +60,14 @@ def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
 
     features = sp.vstack((allx, tx)).tolil()
     features[test_idx_reorder, :] = features[test_idx_range, :]
-    adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+
+    # load graph object
+    g = nx.from_dict_of_lists(graph)
+    # convert to edgelist
+    edgelist = nx.to_pandas_edgelist(g).values.tolist()
+    # create "edge-adjacency" matrix
+    adj = to_edge_adj(edgelist)
+
     labels = np.vstack((ally, ty))
     labels[test_idx_reorder, :] = labels[test_idx_range, :]
 

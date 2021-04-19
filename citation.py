@@ -29,8 +29,9 @@ adj, features, labels, idx_train, idx_val, idx_test = load_citation(args.dataset
 
 model = get_model(args.model, features.size(1), labels.max().item()+1, args.hidden, args.dropout, args.cuda)
 
-if args.model == "SGC": features, precompute_time = sgc_precompute(features, adj, args.degree)
-print("{:.4f}s".format(precompute_time))
+if args.model == "SGC":
+    features, precompute_time = sgc_precompute(features, adj, args.degree)
+    print("{:.4f}s".format(precompute_time))
 
 def train_regression(model,
                      train_features, train_labels,
