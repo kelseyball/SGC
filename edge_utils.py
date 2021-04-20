@@ -1,4 +1,7 @@
 from typing import List, Tuple
+import networkx as nx
+import numpy as np
+import scipy.sparse as sp
 
 
 def to_edge_adj(edgelist: List[Tuple[int]]) -> Tuple[List[List[int]], int]:
@@ -31,4 +34,18 @@ def to_edge_adj(edgelist: List[Tuple[int]]) -> Tuple[List[List[int]], int]:
                 q[i][j] = 0
 
     print(f'non-zero entries in edge-adjacency matrix: {num_pos}')
-    return q
+    return np.array(q)
+
+
+def create_heads_matrix(graph: nx.Graph) -> np.array:
+    degrees = [graph.degree(head) for (head, tail) in graph.edges]
+    return np.diag(degrees)
+
+
+def create_tails_matrix(graph: nx.Graph) -> np.array:
+    degrees = [graph.degree(tail) for (head, tail) in graph.edges]
+    return np.diag(degrees)
+
+
+def create_normalized_edge_adj(eadj, heads, tails) -> sp.coo_matrix:
+    pass
