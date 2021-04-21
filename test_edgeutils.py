@@ -27,6 +27,30 @@ def edgelist_undirected():
 
 
 @pytest.fixture
+def heads_undirected():
+    return np.array([
+        [4, 0, 0, 0, 0, 0],
+        [0, 4, 0, 0, 0, 0],
+        [0, 0, 4, 0, 0, 0],
+        [0, 0, 0, 4, 0, 0],
+        [0, 0, 0, 0, 2, 0],
+        [0, 0, 0, 0, 0, 2],
+    ])
+
+
+@pytest.fixture
+def tails_undirected():
+    return np.array([
+        [4, 0, 0, 0, 0, 0],
+        [0, 2, 0, 0, 0, 0],
+        [0, 0, 4, 0, 0, 0],
+        [0, 0, 0, 2, 0, 0],
+        [0, 0, 0, 0, 4, 0],
+        [0, 0, 0, 0, 0, 4],
+    ])
+
+
+@pytest.fixture
 def graph(edgelist):
     return nx.from_edgelist(edgelist)
 
@@ -34,6 +58,18 @@ def graph(edgelist):
 @pytest.fixture
 def graph_undirected(edgelist_undirected):
     return nx.from_edgelist(edgelist_undirected, create_using=nx.DiGraph)
+
+
+@pytest.fixture
+def edge_adj_undirected():
+    return np.array([
+        [0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0],
+        [1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ])
 
 
 def test_to_edge_adj(edgelist):
@@ -45,40 +81,19 @@ def test_to_edge_adj(edgelist):
     ])
 
 
-def test_to_edge_adj_undirected(edgelist_undirected):
+def test_to_edge_adj_undirected(edgelist_undirected, edge_adj_undirected):
     q = to_edge_adj(edgelist_undirected)
-    assert np.all(q == [
-        [0, 0, 0, 0, 0, 1],
-        [0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 0, 1, 0],
-        [1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-    ])
+    assert np.all(q == edge_adj_undirected)
 
 
-def test_create_heads_matrix_undirected(graph_undirected):
+def test_create_heads_matrix_undirected(graph_undirected, heads_undirected):
     heads = create_heads_matrix(graph_undirected)
-    assert np.all(heads == np.array([
-        [4, 0, 0, 0, 0, 0],
-        [0, 4, 0, 0, 0, 0],
-        [0, 0, 4, 0, 0, 0],
-        [0, 0, 0, 4, 0, 0],
-        [0, 0, 0, 0, 2, 0],
-        [0, 0, 0, 0, 0, 2],
-    ]))
+    assert np.all(heads == heads_undirected)
 
 
-def test_create_tails_matrix_undirected(graph_undirected):
+def test_create_tails_matrix_undirected(graph_undirected, tails_undirected):
     tails = create_tails_matrix(graph_undirected)
-    assert np.all(tails == np.array([
-        [4, 0, 0, 0, 0, 0],
-        [0, 2, 0, 0, 0, 0],
-        [0, 0, 4, 0, 0, 0],
-        [0, 0, 0, 2, 0, 0],
-        [0, 0, 0, 0, 4, 0],
-        [0, 0, 0, 0, 0, 4],
-    ]))
+    assert np.all(tails == tails_undirected)
 
 
 def test_create_heads_matrix(graph):
