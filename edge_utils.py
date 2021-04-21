@@ -48,4 +48,13 @@ def create_tails_matrix(graph: nx.Graph) -> np.array:
 
 
 def create_normalized_edge_adj(eadj, heads, tails) -> sp.coo_matrix:
-    pass
+    """
+    return T^-1/2 Q H^-1/2
+    """
+    t_inv_sqrt = np.power(tails, -0.5)
+    t_inv_sqrt[np.isinf(t_inv_sqrt)] = 0.
+    h_inv_sqrt = np.power(heads, -0.5)
+    h_inv_sqrt[np.isinf(h_inv_sqrt)] = 0.
+    n = np.matmul(eadj, h_inv_sqrt)
+    n = np.matmul(t_inv_sqrt, n)
+    return n

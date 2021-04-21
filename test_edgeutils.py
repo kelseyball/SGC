@@ -1,6 +1,8 @@
 import pytest
 from edge_utils import *
 import networkx as nx
+import math
+
 
 @pytest.fixture
 def edgelist():
@@ -112,3 +114,21 @@ def test_create_tails_matrix(graph):
         [0, 1, 0],
         [0, 0, 1],
     ]))
+
+
+def test_create_normalized_edge_adj(heads_undirected, tails_undirected, edge_adj_undirected):
+    n = create_normalized_edge_adj(
+        eadj=edge_adj_undirected,
+        heads=heads_undirected,
+        tails=tails_undirected,
+    )
+    val = math.pow(2, 1/2) / 4
+    assert np.all(np.isclose(n, np.array([
+        [0, 0, 0, 0, 0, val],
+        [0, 0, val, 0, 0, 0],
+        [0, 0, 0, 0, val, 0],
+        [val, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+
+    ])))
