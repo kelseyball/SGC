@@ -80,13 +80,15 @@ def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
     idx_train = range(len(y))
     idx_val = range(len(y), len(y)+500)
 
-    adj, features = preprocess_citation(adj, features, normalization)
+    normalized_eadj = create_normalized_edge_adj(eadj=eadj, heads=heads, tails=tails)
+    print(f'normalized_eadj.shape {normalized_eadj.shape}')
+    features = row_normalize(features)
 
     # porting to pytorch
     features = torch.FloatTensor(np.array(features.todense())).float()
     labels = torch.LongTensor(labels)
     labels = torch.max(labels, dim=1)[1]
-    adj = sparse_mx_to_torch_sparse_tensor(adj).float()
+    normalized_eadj = sparse_mx_to_torch_sparse_tensor(normalized_eadj).float()
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
