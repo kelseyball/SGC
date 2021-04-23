@@ -25,12 +25,16 @@ if args.tuned:
 # setting random seeds
 set_seed(args.seed, args.cuda)
 
-adj, features, labels, idx_train, idx_val, idx_test = load_citation(args.dataset, args.normalization, args.cuda)
+eadj, features, labels, idx_train, idx_val, idx_test = load_citation(args.dataset, args.cuda)
+print(f'eadj.shape {eadj.shape}')
+print(f'features.shape {features.shape}')
+print(f'labels.shape {labels.shape}')
+
 
 model = get_model(args.model, features.size(1), labels.max().item()+1, args.hidden, args.dropout, args.cuda)
 
 if args.model == "SGC":
-    features, precompute_time = sgc_precompute(features, adj, args.degree)
+    features, precompute_time = sgc_precompute(features, eadj, args.degree)
     print("{:.4f}s".format(precompute_time))
 
 def train_regression(model,

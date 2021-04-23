@@ -15,12 +15,6 @@ def parse_index_file(filename):
         index.append(int(line.strip()))
     return index
 
-def preprocess_citation(adj, features, normalization="FirstOrderGCN"):
-    adj_normalizer = fetch_normalization(normalization)
-    adj = adj_normalizer(adj)
-    features = row_normalize(features)
-    return adj, features
-
 def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     """Convert a scipy sparse matrix to a torch sparse tensor."""
     sparse_mx = sparse_mx.tocoo().astype(np.float32)
@@ -30,7 +24,7 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     shape = torch.Size(sparse_mx.shape)
     return torch.sparse.FloatTensor(indices, values, shape)
 
-def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
+def load_citation(dataset_str="cora", cuda=True):
     """
     Load Citation Networks Datasets.
     """
@@ -63,15 +57,24 @@ def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
 
     # load graph object
     g = nx.from_dict_of_lists(graph, create_using=nx.DiGraph)
+
+    # add self-loops
+    g = add_self_loops(g)
+
     # convert to edgelist
-    edgelist = nx.to_pandas_edgelist(g).values.tolist()
+    edgelist = [tuple(edge) for edge in nx.to_pandas_edgelist(g).values]
+
+    # convert each edge from List[int] to Tuple[int, int]
+    # edgelist = [(edge[0], edge[1]) for edge in edgelist]
+
+    idx_to_edge = {i: edge for i, edge in enumerate(edgelist)}
+    edge_to_idx = {edge: i for i, edge in enumerate(edgelist)}
+
     # create "edge-adjacency" matrix
     eadj = to_edge_adj(edgelist)
-    heads = create_heads_matrix(g)
-    tails = create_tails_matrix(g)
-    print(f'eadj.shape {eadj.shape}')
-    print(f'heads.shape {heads.shape}')
-    print(f'tails.shape {tails.shape}')
+    heads = create_heads_matrix(edgelist=edgelist, graph=g)
+    tails = create_tails_matrix(edgelist=edgelist, graph=g)
+    assert eadj.shape == heads.shape == tails.shape
 
     labels = np.vstack((ally, ty))
     labels[test_idx_reorder, :] = labels[test_idx_range, :]
@@ -80,15 +83,24 @@ def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
     idx_train = range(len(y))
     idx_val = range(len(y), len(y)+500)
 
+    # get train, val, test indices of self-loops in message matrix
+    idx_test = [edge_to_idx[(i, i)] for i in idx_test]
+    idx_train = [edge_to_idx[(i, i)] for i in idx_train]
+    idx_val = [edge_to_idx[(i, i)] for i in idx_val]
+    edge_labels = [labels[head] for (head, tail) in edgelist]
+
     normalized_eadj = create_normalized_edge_adj(eadj=eadj, heads=heads, tails=tails)
-    print(f'normalized_eadj.shape {normalized_eadj.shape}')
+    assert normalized_eadj.shape == eadj.shape
     features = row_normalize(features)
 
+    edge_features = create_msg_matrix(edgelist, features.toarray())
+    assert edge_features.shape == (len(edgelist), features.shape[1])
+
     # porting to pytorch
-    features = torch.FloatTensor(np.array(features.todense())).float()
+    edge_features = torch.from_numpy(edge_features).float()
     labels = torch.LongTensor(labels)
     labels = torch.max(labels, dim=1)[1]
-    normalized_eadj = sparse_mx_to_torch_sparse_tensor(normalized_eadj).float()
+    normalized_eadj = torch.from_numpy(normalized_eadj).float()
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
@@ -101,7 +113,7 @@ def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
         idx_val = idx_val.cuda()
         idx_test = idx_test.cuda()
 
-    return adj, features, labels, idx_train, idx_val, idx_test
+    return normalized_eadj, edge_features, edge_labels, idx_train, idx_val, idx_test
 
 def sgc_precompute(features, adj, degree):
     t = perf_counter()

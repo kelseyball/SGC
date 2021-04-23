@@ -4,7 +4,7 @@ import numpy as np
 import scipy.sparse as sp
 
 
-def to_edge_adj(edgelist: List[Tuple[int]]) -> Tuple[List[List[int]], int]:
+def to_edge_adj(edgelist: List[Tuple[int, int]]) -> Tuple[List[List[int]], int]:
     """
     Create an "edge-adjacency" matrix Q of shape (num_edges, num_edges),
     where
@@ -37,17 +37,17 @@ def to_edge_adj(edgelist: List[Tuple[int]]) -> Tuple[List[List[int]], int]:
     return np.array(q)
 
 
-def create_heads_matrix(graph: nx.Graph) -> np.array:
-    degrees = [graph.degree(head) for (head, tail) in graph.edges]
+def create_heads_matrix(edgelist: List[Tuple[int, int]], graph: nx.DiGraph) -> np.array:
+    degrees = [graph.degree(head) for (head, tail) in edgelist]
     return np.diag(degrees)
 
 
-def create_tails_matrix(graph: nx.Graph) -> np.array:
-    degrees = [graph.degree(tail) for (head, tail) in graph.edges]
+def create_tails_matrix(edgelist: List[Tuple[int, int]], graph: nx.DiGraph) -> np.array:
+    degrees = [graph.degree(tail) for (head, tail) in edgelist]
     return np.diag(degrees)
 
 
-def create_normalized_edge_adj(eadj, heads, tails) -> sp.coo_matrix:
+def create_normalized_edge_adj(eadj, heads, tails) -> np.ndarray:
     """
     return T^-1/2 Q H^-1/2
     """
@@ -58,3 +58,27 @@ def create_normalized_edge_adj(eadj, heads, tails) -> sp.coo_matrix:
     n = np.matmul(eadj, h_inv_sqrt)
     n = np.matmul(t_inv_sqrt, n)
     return n
+
+
+def add_self_loops(graph: nx.DiGraph) -> nx.DiGraph:
+    """
+    add self loops to graph
+    """
+    graph.add_edges_from([(u, u) for u in graph.nodes])
+    return graph
+
+
+def create_msg_matrix(edgelist: List[Tuple[int, int]], features: np.ndarray) -> np.ndarray:
+    """
+    create initial message matrix of shape (num_edges, num_feats)
+    where the message on the edge from node i to node j is
+        m_(i, j) = x_i
+    and the self-message at node i (also defined as the hidden state of node i) is
+        m_(i, i) = x_i
+    """
+    elen = len(edgelist)
+    m = np.ndarray((elen, features.shape[1]))
+    for i in range(elen):
+        head_node = edgelist[i][0]
+        m[i] = features[head_node]
+    return m

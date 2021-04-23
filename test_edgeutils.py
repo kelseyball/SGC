@@ -29,6 +29,34 @@ def edgelist_undirected():
 
 
 @pytest.fixture
+def edgelist_augmented():
+    """
+    bidirectional interpretation of an undirected graph with self loops
+    """
+    return [
+        (1, 2),
+        (1, 4),
+        (2, 1),
+        (2, 3),
+        (3, 2),
+        (4, 1),
+    ]
+
+@pytest.fixture
+def features():
+    """
+    initial feature vector
+    """
+    return np.array([
+        [0, 0],
+        [1, 1],
+        [2, 2],
+        [3, 3],
+        [4, 4],
+    ])
+
+
+@pytest.fixture
 def heads_undirected():
     return np.array([
         [4, 0, 0, 0, 0, 0],
@@ -88,18 +116,18 @@ def test_to_edge_adj_undirected(edgelist_undirected, edge_adj_undirected):
     assert np.all(q == edge_adj_undirected)
 
 
-def test_create_heads_matrix_undirected(graph_undirected, heads_undirected):
-    heads = create_heads_matrix(graph_undirected)
+def test_create_heads_matrix_undirected(edgelist_undirected, graph_undirected, heads_undirected):
+    heads = create_heads_matrix(edgelist_undirected, graph_undirected)
     assert np.all(heads == heads_undirected)
 
 
-def test_create_tails_matrix_undirected(graph_undirected, tails_undirected):
-    tails = create_tails_matrix(graph_undirected)
+def test_create_tails_matrix_undirected(edgelist_undirected, graph_undirected, tails_undirected):
+    tails = create_tails_matrix(edgelist_undirected, graph_undirected)
     assert np.all(tails == tails_undirected)
 
 
-def test_create_heads_matrix(graph):
-    heads = create_heads_matrix(graph)
+def test_create_heads_matrix(edgelist, graph):
+    heads = create_heads_matrix(edgelist, graph)
     assert np.all(heads == np.array([
         [2, 0, 0],
         [0, 2, 0],
@@ -107,8 +135,8 @@ def test_create_heads_matrix(graph):
     ]))
 
 
-def test_create_tails_matrix(graph):
-    tails = create_tails_matrix(graph)
+def test_create_tails_matrix(edgelist, graph):
+    tails = create_tails_matrix(edgelist, graph)
     assert np.all(tails == np.array([
         [2, 0, 0],
         [0, 1, 0],
@@ -132,3 +160,24 @@ def test_create_normalized_edge_adj(heads_undirected, tails_undirected, edge_adj
         [0, 0, 0, 0, 0, 0],
 
     ])))
+
+
+def test_create_msg_matrix(edgelist, features):
+    assert np.all(create_msg_matrix(edgelist, features) == np.array([
+        [1, 1],
+        [1, 1],
+        [2, 2]
+    ]))
+
+
+def test_add_self_loops(graph):
+    graph = add_self_loops(graph)
+    assert sorted(nx.to_pandas_edgelist(graph).values.tolist()) == [
+        [1, 1],
+        [1, 2],
+        [1, 4],
+        [2, 2],
+        [2, 3],
+        [3, 3],
+        [4, 4],
+    ]
