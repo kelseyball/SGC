@@ -84,9 +84,9 @@ def load_citation(dataset_str="cora", cuda=True):
     idx_val = range(len(y), len(y)+500)
 
     # get train, val, test indices of self-loops in message matrix
-    idx_test = [edge_to_idx[(i, i)] for i in idx_test]
-    idx_train = [edge_to_idx[(i, i)] for i in idx_train]
-    idx_val = [edge_to_idx[(i, i)] for i in idx_val]
+    edge_idx_test = [edge_to_idx[(i, i)] for i in idx_test]
+    edge_idx_train = [edge_to_idx[(i, i)] for i in idx_train]
+    edge_idx_val = [edge_to_idx[(i, i)] for i in idx_val]
     edge_labels = [labels[head] for (head, tail) in edgelist]
 
     normalized_eadj = create_normalized_edge_adj(eadj=eadj, heads=heads, tails=tails)
@@ -98,22 +98,22 @@ def load_citation(dataset_str="cora", cuda=True):
 
     # porting to pytorch
     edge_features = torch.from_numpy(edge_features).float()
-    labels = torch.LongTensor(labels)
-    labels = torch.max(labels, dim=1)[1]
+    edge_labels = torch.LongTensor(edge_labels)
+    edge_labels = torch.max(edge_labels, dim=1)[1]
     normalized_eadj = torch.from_numpy(normalized_eadj).float()
-    idx_train = torch.LongTensor(idx_train)
-    idx_val = torch.LongTensor(idx_val)
-    idx_test = torch.LongTensor(idx_test)
+    edge_idx_train = torch.LongTensor(edge_idx_train)
+    edge_idx_val = torch.LongTensor(edge_idx_val)
+    edge_idx_test = torch.LongTensor(edge_idx_test)
 
     if cuda:
-        features = features.cuda()
-        adj = adj.cuda()
-        labels = labels.cuda()
-        idx_train = idx_train.cuda()
-        idx_val = idx_val.cuda()
-        idx_test = idx_test.cuda()
+        edge_features = edge_features.cuda()
+        normalized_eadj = normalized_eadj.cuda()
+        edge_labels = edge_labels.cuda()
+        edge_idx_train = edge_idx_train.cuda()
+        edge_idx_val = edge_idx_val.cuda()
+        edge_idx_test = edge_idx_test.cuda()
 
-    return normalized_eadj, edge_features, edge_labels, idx_train, idx_val, idx_test
+    return normalized_eadj, edge_features, edge_labels, edge_idx_train, edge_idx_val, edge_idx_test
 
 def sgc_precompute(features, adj, degree):
     t = perf_counter()
